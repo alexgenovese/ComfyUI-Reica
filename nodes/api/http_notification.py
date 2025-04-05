@@ -13,7 +13,8 @@ class HTTPNotificationNode:
                 "endpoint_url": ("STRING", {"default": "http://tryonyou-endpoint.vercel.app/api/update-generation"}),
                 "image_url": ("STRING", {"default": ""}),
                 "user_id": ("STRING", {"default": ""}),
-                "product_sku": ("STRING", {"default": ""})
+                "product_sku": ("STRING", {"default": ""}),
+                "brand_name": ("STRING", {"default": ""})
             }
         }
 
@@ -22,7 +23,7 @@ class HTTPNotificationNode:
     FUNCTION = "send_notification"
     CATEGORY = "api"
 
-    def send_notification(self, endpoint_url, image_url, user_id, product_sku):
+    def send_notification(self, endpoint_url, image_url, user_id, product_sku, brand_name):
         response = ""
         error_message = ""
         # Initialize display_text with content to ensure it's never empty
@@ -33,15 +34,19 @@ class HTTPNotificationNode:
             payload = {
                 "image_url": image_url,
                 "user_id": user_id,
-                "product_sku": product_sku
+                "product_sku": product_sku,
+                "brand_name": brand_name,
             }
             
             # Update display_text before making request
             display_text = f"Sending notification to:\n{endpoint_url}\n\nPayload:\n{json.dumps(payload, indent=2)}"
             
             # Make HTTP POST request
-            headers = {'Content-Type': 'application/json'}
-            r = requests.post(endpoint_url, data=json.dumps(payload), headers=headers, timeout=30)
+            headers = {
+                'Content-Type': 'application/json',
+                'Origin': 'http://localhost:3001'
+            }
+            r = requests.post(endpoint_url, headers=headers, data=json.dumps(payload), timeout=30)
             
             # Get response
             r.raise_for_status()  # Raise exception for non-2xx response
@@ -53,6 +58,24 @@ class HTTPNotificationNode:
             display_text = f"✅ Notification sent successfully\n\nEndpoint: {endpoint_url}\n\nStatus: {r.status_code}\n\nUser ID: {user_id}\nProduct SKU: {product_sku}\n\nResponse:\n{response[:200]}"
             if len(response) > 200:
                 display_text += "...[truncated]"
+
+            print(response)
+            print(display_text)
+            # Check for specific error messages in the response
+            if "error" in response:
+                error_message = f"Error in response: {response}"
+                print(error_message)
+                display_text += f"\n\nError: {error_message}"
+            else:
+                error_message = "No errors in response"
+                print(error_message)
+                display_text += f"\n\nNo errors in response: {error_message}"
+            # Ensure display_text is a string
+            display_text = str(display_text)
+            # Ensure response is a string
+            response = str(response)
+            # Ensure error_message is a string
+            error_message = str(error_message)
                 
             return (response, error_message, display_text)
             
