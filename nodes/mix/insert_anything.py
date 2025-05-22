@@ -36,19 +36,38 @@ class InsertAnythingNode:
     
     def tensor_to_pil(self, image_tensor):
         """Convert a PyTorch tensor to a PIL Image."""
-        # Convert to numpy and adjust dimensions if needed
-        if len(image_tensor.shape) == 4 and image_tensor.shape[0] == 1:
-            # Remove batch dimension if present with size 1
-            image_tensor = image_tensor[0]
+        # Ensure we're working with a torch tensor
+        if not isinstance(image_tensor, torch.Tensor):
+            raise TypeError(f"Expected torch.Tensor but got {type(image_tensor)}")
             
-        # Convert to numpy, move channel dimension to the end
-        if image_tensor.shape[0] in [1, 3, 4]:  # Channel-first format
-            image_np = image_tensor.permute(1, 2, 0).cpu().numpy()
-        else:  # Assume already in HWC format
-            image_np = image_tensor.cpu().numpy()
+        # Make a copy to avoid modifying the original
+        tensor = image_tensor.clone().detach()
+        
+        # Handle batch dimension
+        if len(tensor.shape) == 4:
+            tensor = tensor[0]  # Take first image if batched
             
-        # Scale from [0,1] to [0,255] if needed
-        if image_np.max() <= 1.0:
+        # Now we should have a 3D tensor [C,H,W] or [H,W,C]
+        if len(tensor.shape) != 3:
+            raise ValueError(f"Expected 3D tensor after removing batch, but got shape {tensor.shape}")
+        
+        # Determine tensor format and convert to [H,W,C]
+        if tensor.shape[0] == 3 or tensor.shape[0] == 4:  # [C,H,W] format
+            try:
+                tensor = tensor.permute(1, 2, 0)
+            except Exception as e:
+                print(f"Error permuting tensor with shape {tensor.shape}: {e}")
+                # Try alternate approach if permute fails
+                tensor = tensor.cpu().numpy().transpose(1, 2, 0)
+        
+        # Convert to numpy array
+        if isinstance(tensor, torch.Tensor):
+            image_np = tensor.cpu().numpy()
+        else:
+            image_np = tensor  # Already numpy from fallback
+            
+        # Handle scaling to 0-255 range
+        if image_np.max() <= 1.0 and image_np.dtype != np.uint8:
             image_np = (image_np * 255.0).astype(np.uint8)
         else:
             image_np = image_np.astype(np.uint8)
