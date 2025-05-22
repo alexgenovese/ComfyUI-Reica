@@ -15,9 +15,8 @@ class InsertAnythingNode:
                 "background_mask": ("MASK",),
                 "reference_image": ("IMAGE",),
                 "reference_mask": ("MASK",),
-                "flux_fill_model": (folder_paths.get_filename_list("unet"),),
-                "flux_redux_model": (folder_paths.get_filename_list("style_models"),),
-                "lora_model": (folder_paths.get_filename_list("loras"),),
+                "flux_fill_pipe": ("MODEL",),
+                "flux_redux_pipe": ("MODEL",),
                 "seed": ("INT", {"default": 666, "min": -1, "max": 999999999}),
                 "steps": ("INT", {"default": 28, "min": 1, "max": 100}),
                 "guidance_scale": ("FLOAT", {"default": 3.5, "min": 0.0, "max": 20.0, "step": 0.1}),
@@ -33,104 +32,15 @@ class InsertAnythingNode:
     CATEGORY = "image/inpainting"
 
     def __init__(self):
-        self.pipe = None
-        self.redux = None
-        self.current_flux_fill = None
-        self.current_flux_redux = None
-        self.current_lora = None
-
-    def load_models(self, flux_fill_model, flux_redux_model, lora_model):
-        """Load models only if they've changed"""
-        flux_fill_path = folder_paths.get_full_path("unet", flux_fill_model)
-        flux_redux_path = folder_paths.get_full_path("style_models", flux_redux_model)
-        lora_path = folder_paths.get_full_path("loras", lora_model)
-        
-        dtype = torch.bfloat16
-        device = "cuda" if torch.cuda.is_available() else "cpu"
-        
-        # Load FluxFillPipeline if changed
-        if self.current_flux_fill != flux_fill_model or self.pipe is None:
-            try:
-                from diffusers import FluxFillPipeline
-                self.pipe = FluxFillPipeline.from_single_file(
-                    flux_fill_path,
-                    torch_dtype=dtype
-                ).to(device)
-                self.current_flux_fill = flux_fill_model
-                print(f"Loaded FluxFillPipeline: {flux_fill_model}")
-            except Exception as e:
-                raise Exception(f"Failed to load FluxFillPipeline: {e}")
-        
-        # Load FluxPriorReduxPipeline if changed
-        if self.current_flux_redux != flux_redux_model or self.redux is None:
-            try:
-                from diffusers import FluxPriorReduxPipeline
-                self.redux = FluxPriorReduxPipeline.from_single_file(
-                    flux_redux_path
-                ).to(dtype=dtype).to(device)
-                self.current_flux_redux = flux_redux_model
-                print(f"Loaded FluxPriorReduxPipeline: {flux_redux_model}")
-            except Exception as e:
-                raise Exception(f"Failed to load FluxPriorReduxPipeline: {e}")
-        
-        # Load LoRA if changed
-        if self.current_lora != lora_model:
-            try:
-                self.pipe.load_lora_weights(lora_path)
-                self.current_lora = lora_model
-                print(f"Loaded LoRA weights: {lora_model}")
-            except Exception as e:
-                raise Exception(f"Failed to load LoRA weights: {e}")
-
-    def tensor_to_pil(self, tensor):
-        """Convert ComfyUI tensor to PIL Image"""
-        # Tensor format: [batch, height, width, channels] or [height, width, channels]
-        if len(tensor.shape) == 4:
-            tensor = tensor[0]  # Take first batch
-        
-        # Convert from [0,1] to [0,255] and to uint8
-        np_image = (tensor.cpu().numpy() * 255).astype(np.uint8)
-        return Image.fromarray(np_image)
-
-    def mask_to_pil(self, mask):
-        """Convert ComfyUI mask to PIL Image"""
-        # Mask format: [batch, height, width] or [height, width]
-        if len(mask.shape) == 3:
-            mask = mask[0]  # Take first batch
-        
-        # Convert to uint8
-        np_mask = (mask.cpu().numpy() * 255).astype(np.uint8)
-        return Image.fromarray(np_mask, mode='L')
-
-    def pil_to_tensor(self, pil_image):
-        """Convert PIL Image to ComfyUI tensor"""
-        np_image = np.array(pil_image).astype(np.float32) / 255.0
-        if len(np_image.shape) == 2:  # Grayscale
-            np_image = np.stack([np_image] * 3, axis=-1)
-        return torch.from_numpy(np_image).unsqueeze(0)  # Add batch dimension
-
-    def create_highlighted_mask(self, image_np, mask_np, alpha=0.5, gray_value=128):
-        """Create highlighted mask visualization"""
-        if mask_np.max() <= 1.0:
-            mask_np = (mask_np * 255).astype(np.uint8)
-        mask_bool = mask_np > 128
-
-        image_float = image_np.astype(np.float32)
-        gray_overlay = np.full_like(image_float, gray_value, dtype=np.float32)
-
-        result = image_float.copy()
-        result[mask_bool] = (
-            (1 - alpha) * image_float[mask_bool] + alpha * gray_overlay[mask_bool]
-        )
-
-        return result.astype(np.uint8)
+        pass
 
     def insert_anything(self, background_image, background_mask, reference_image, reference_mask, 
-                       flux_fill_model, flux_redux_model, lora_model, seed, steps, guidance_scale,
+                       flux_fill_pipe, flux_redux_pipe, seed, steps, guidance_scale,
                        expansion_ratio=1.3, mask_dilation=2):
         
-        # Load models
-        self.load_models(flux_fill_model, flux_redux_model, lora_model)
+        # Use the provided models directly
+        self.pipe = flux_fill_pipe
+        self.redux = flux_redux_pipe
         
         # Convert inputs to PIL
         tar_image = self.tensor_to_pil(background_image)
