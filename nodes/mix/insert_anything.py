@@ -52,7 +52,7 @@ class InsertAnythingNode:
         if self.current_flux_fill != flux_fill_model or self.pipe is None:
             try:
                 from diffusers import FluxFillPipeline
-                self.pipe = FluxFillPipeline.from_pretrained(
+                self.pipe = FluxFillPipeline.from_single_file(
                     flux_fill_path,
                     torch_dtype=dtype
                 ).to(device)
@@ -65,7 +65,7 @@ class InsertAnythingNode:
         if self.current_flux_redux != flux_redux_model or self.redux is None:
             try:
                 from diffusers import FluxPriorReduxPipeline
-                self.redux = FluxPriorReduxPipeline.from_pretrained(
+                self.redux = FluxPriorReduxPipeline.from_single_file(
                     flux_redux_path
                 ).to(dtype=dtype).to(device)
                 self.current_flux_redux = flux_redux_model
