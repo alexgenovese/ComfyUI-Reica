@@ -33,6 +33,56 @@ class InsertAnythingNode:
 
     def __init__(self):
         pass
+    
+    def tensor_to_pil(self, image_tensor):
+        """Convert a PyTorch tensor to a PIL Image."""
+        # Convert to numpy and adjust dimensions if needed
+        if len(image_tensor.shape) == 4 and image_tensor.shape[0] == 1:
+            # Remove batch dimension if present with size 1
+            image_tensor = image_tensor[0]
+            
+        # Convert to numpy, move channel dimension to the end
+        if image_tensor.shape[0] in [1, 3, 4]:  # Channel-first format
+            image_np = image_tensor.permute(1, 2, 0).cpu().numpy()
+        else:  # Assume already in HWC format
+            image_np = image_tensor.cpu().numpy()
+            
+        # Scale from [0,1] to [0,255] if needed
+        if image_np.max() <= 1.0:
+            image_np = (image_np * 255.0).astype(np.uint8)
+        else:
+            image_np = image_np.astype(np.uint8)
+            
+        return Image.fromarray(image_np)
+    
+    def mask_to_pil(self, mask_tensor):
+        """Convert a mask tensor to a PIL Image."""
+        if len(mask_tensor.shape) == 3 and mask_tensor.shape[0] == 1:  # Single batch dimension
+            mask_np = mask_tensor[0].cpu().numpy()
+        else:
+            mask_np = mask_tensor.cpu().numpy()
+            
+        # Scale from [0,1] to [0,255] if needed
+        if mask_np.max() <= 1.0:
+            mask_np = (mask_np * 255.0).astype(np.uint8)
+        else:
+            mask_np = mask_np.astype(np.uint8)
+            
+        return Image.fromarray(mask_np)
+    
+    def pil_to_tensor(self, pil_image):
+        """Convert a PIL Image to a PyTorch tensor."""
+        # Convert to numpy array
+        img_np = np.array(pil_image).astype(np.float32) / 255.0
+        
+        # Change from HWC to BCHW format
+        if len(img_np.shape) == 3:
+            img_np = np.transpose(img_np, (2, 0, 1))  # HWC -> CHW
+        
+        # Add batch dimension
+        img_tensor = torch.from_numpy(img_np).unsqueeze(0)
+        
+        return img_tensor
 
     def insert_anything(self, background_image, background_mask, reference_image, reference_mask, 
                        flux_fill_pipe, flux_redux_pipe, seed, steps, guidance_scale,
