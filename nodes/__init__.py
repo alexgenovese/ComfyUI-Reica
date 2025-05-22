@@ -1,6 +1,7 @@
 from .storage.google_storage import GCPReadImageNode, GCPWriteImageNode
 from .mix.text_image_display_node import ReicaTextImageDisplay
 from .mix.read_image_url import ReicaReadImageUrl
+from .mix.insert_anything import InsertAnythingNode
 from .api.http_notification import HTTPNotificationNode
 
 
@@ -11,6 +12,7 @@ NODE_CLASS_MAPPINGS = {
     "ReicaTextImageDisplay": ReicaTextImageDisplay,
     "ReicaReadImageUrl": ReicaReadImageUrl,
     "ReicaHTTPNotification": HTTPNotificationNode,
+    "InsertAnythingNode": InsertAnythingNode
 }
 
 # Nomi visualizzati per i nodi
@@ -19,5 +21,6 @@ NODE_DISPLAY_NAME_MAPPINGS = {
     "ReicaGCPWriteImageNode": "Reica GCP: Write Image & Get URL",
     "ReicaTextImageDisplay": "Reica Text Image Display",
     "ReicaReadImageUrl": "Reica Read Image URL",
-    "ReicaHTTPNotification": "Reica API: Send HTTP Notification"
+    "ReicaHTTPNotification": "Reica API: Send HTTP Notification",
+    "InsertAnythingNode": "Insert Anything"
 }
