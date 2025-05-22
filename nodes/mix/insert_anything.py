@@ -16,7 +16,7 @@ class InsertAnythingNode:
                 "reference_image": ("IMAGE",),
                 "reference_mask": ("MASK",),
                 "flux_fill_pipe": ("MODEL",),
-                "flux_redux_pipe": ("MODEL",),
+                "flux_redux_pipe": ("STYLE_MODEL",),
                 "seed": ("INT", {"default": 666, "min": -1, "max": 999999999}),
                 "steps": ("INT", {"default": 28, "min": 1, "max": 100}),
                 "guidance_scale": ("FLOAT", {"default": 3.5, "min": 0.0, "max": 20.0, "step": 0.1}),
