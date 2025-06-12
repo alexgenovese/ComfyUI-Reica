@@ -46,11 +46,8 @@ class URLImageLoader:
                 if image.mode != 'RGB':
                     image = image.convert('RGB')
                 
-                # Converti in numpy array e poi in tensor
-                image_np = np.array(image).astype(np.float32) / 255.0
-                image_tensor = torch.from_numpy(image_np)[None,]
                 
-                images.append(image_tensor)
+                images.append(image)
                 filenames.append(filename)
                 
             except Exception as e:
