@@ -4,6 +4,10 @@ import numpy as np
 from io import BytesIO
 from urllib.parse import urlparse
 
+# Convert PIL to Tensor
+def pil2tensor(image):
+    return torch.from_numpy(np.array(image).astype(np.float32) / 255.0).unsqueeze(0)
+
 class URLImageLoader:
     @classmethod
     def INPUT_TYPES(cls):
@@ -47,7 +51,7 @@ class URLImageLoader:
                     image = image.convert('RGB')
                 
                 
-                images.append(image)
+                images.append(pil2tensor(image))
                 filenames.append(filename)
                 
             except Exception as e:
