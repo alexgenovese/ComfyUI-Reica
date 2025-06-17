@@ -23,20 +23,20 @@ class GCPWriteImageNode:
                 "images": ("IMAGE",),
                 "bucket_name": ("STRING", {"default": "my-bucket"}),
                 "bucket_path": ("STRING", {"default": "some/folder"}),
-                "file_name": ("STRING", {"default": "my_image.png"}),
+                "file_names": ("STRING", {"default": "image1.png,image2.png"}),
                 "gcp_service_json": ("STRING", {"default": "/path/to/service_account.json"})
             }
         }
 
     RETURN_TYPES = ("IMAGE", "STRING", "STRING")
-    RETURN_NAMES = ("images", "url", "error_message")
+    RETURN_NAMES = ("images", "urls", "error_messages")
     FUNCTION = "store_image_in_gcp"
     OUTPUT_NODE = True
     CATEGORY = "gcp_storage"
 
-    def store_image_in_gcp(self, images, bucket_name, bucket_path, file_name, gcp_service_json):
-        error_message = ""
-        url = ""
+    def store_image_in_gcp(self, images, bucket_name, bucket_path, file_names, gcp_service_json):
+        error_messages = []
+        urls = []
         
         try:
             script_dir = os.path.dirname(os.path.abspath(__file__))
@@ -48,36 +48,53 @@ class GCPWriteImageNode:
             
             os.environ["GOOGLE_APPLICATION_CREDENTIALS"] = gcp_service_json
             
-            # Process the first image (you could modify to handle multiple images differently)
-            image = images[0]
-            i = 255. * image.cpu().numpy()
-            img = Image.fromarray(np.clip(i, 0, 255).astype(np.uint8))
+            # Handle both single and multiple images
+            images_count = 1 if len(images.shape) == 3 else len(images)
             
-            # Instead of saving to file, use BytesIO to keep in memory
-            img_byte_arr = BytesIO()
-            img.save(img_byte_arr, format='PNG', compress_level=self.compress_level)
-            img_byte_arr.seek(0)  # Go to the start of the BytesIO object
+            # Split and clean file names string into array
+            file_names_array = [name.strip() for name in file_names.split(",") if name.strip()]
             
-            # Carichiamo l'immagine su GCP direttamente dalla memoria
+            # Strict validation of matching counts
+            if len(file_names_array) != images_count:
+                raise ValueError(f"Mismatch between number of images ({images_count}) and filenames ({len(file_names_array)}). Please provide exactly one filename per image.")
+            
+            # Convert single image to list format if needed
+            images_list = [images] if images_count == 1 else images
+            
             storage_client = storage.Client()
             bucket = storage_client.bucket(bucket_name)
-            blob_path = f"{bucket_path}/{file_name}".strip("/")
-            blob = bucket.blob(blob_path)
             
-            print(f"Uploading blob to {bucket_name}/{blob_path}..")
-            blob.upload_from_file(img_byte_arr, content_type='image/png')
+            # Process each image with its corresponding filename
+            for idx, (image, filename) in enumerate(zip(images_list, file_names_array)):
+                try:
+                    i = 255. * image.cpu().numpy()
+                    img = Image.fromarray(np.clip(i, 0, 255).astype(np.uint8))
+                    
+                    img_byte_arr = BytesIO()
+                    img.save(img_byte_arr, format='PNG', compress_level=self.compress_level)
+                    img_byte_arr.seek(0)
+                    
+                    blob_path = f"{bucket_path}/{filename}".strip("/")
+                    blob = bucket.blob(blob_path)
+                    
+                    print(f"Uploading blob to {bucket_name}/{blob_path}..")
+                    blob.upload_from_file(img_byte_arr, content_type='image/png')
+                    
+                    urls.append(blob.public_url)
+                    error_messages.append("")
+                    
+                except Exception as e:
+                    error_msg = f"Failed to upload image {idx} ({filename}): {str(e)}"
+                    error_messages.append(error_msg)
+                    urls.append("")
+                    print(error_msg)
             
-            # Rendiamo il blob pubblico se richiesto
-            url = blob.public_url
+            return (images, ",".join(urls), ",".join(error_messages))
             
-            print(f"Image uploaded successfully. URL: {url}")
-            
-            return (images, url, error_message)
-        
         except Exception as e:
-            error_message = f"Upload failed: {str(e)}"
-            print(error_message)
-            return (images, url, error_message)
+            error_msg = f"General upload failure: {str(e)}"
+            print(error_msg)
+            return (images, "", error_msg)
 
 class GCPReadImageNode:
     def __init__(self):
