@@ -3,6 +3,7 @@ from .mix.text_image_display_node import ReicaTextImageDisplay
 from .mix.read_image_url import ReicaReadImageUrl
 from .mix.insert_anything import InsertAnythingNode
 from .mix.url_image_loader_filename import URLImageLoaderFilename
+from .tryoffdiff.nodes import TryOffDiffNode, TryOffDiffLoaderNode
 from .api.http_notification import HTTPNotificationNode
 
 
@@ -14,7 +15,9 @@ NODE_CLASS_MAPPINGS = {
     "ReicaReadImageUrl": ReicaReadImageUrl,
     "ReicaURLImageLoader": URLImageLoaderFilename,
     "ReicaHTTPNotification": HTTPNotificationNode,
-    "InsertAnythingNode": InsertAnythingNode
+    "ReicaInsertAnythingNode": InsertAnythingNode,
+    "ReicaTryOffDiffLoader": TryOffDiffLoaderNode,
+    "ReicaTryOffDiffGenerator": TryOffDiffNode,
 }
 
 # Nomi visualizzati per i nodi
@@ -25,5 +28,7 @@ NODE_DISPLAY_NAME_MAPPINGS = {
     "ReicaReadImageUrl": "Reica Read Image URL",
     "ReicaURLImageLoader": "Reica URL Image Loader Filename",
     "ReicaHTTPNotification": "Reica API: Send HTTP Notification",
-    "InsertAnythingNode": "Insert Anything"
+    "ReicaInsertAnythingNode": "Reica Insert Anything",
+    "ReicaTryOffDiffLoader": "Reica TryOffDiff Model Loader",
+    "ReicaTryOffDiffGenerator": "Reica TryOffDiff Generator"
 }
