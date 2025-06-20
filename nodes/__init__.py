@@ -1,10 +1,11 @@
 from .storage.google_storage import GCPReadImageNode, GCPWriteImageNode
 from .mix.text_image_display_node import ReicaTextImageDisplay
-from .mix.read_image_url import ReicaReadImageUrl
 from .mix.insert_anything import InsertAnythingNode
 from .mix.url_image_loader_filename import URLImageLoaderFilename
 from .tryoffdiff.nodes import TryOffDiffNode, TryOffDiffLoaderNode
 from .api.http_notification import HTTPNotificationNode
+from .mix.loop_back import LoadLoopImagesFromURLs, LoadLoopImagesFromURLsSkipErrors
+
 
 
 # Mappatura dei nodi per ComfyUI
@@ -12,12 +13,13 @@ NODE_CLASS_MAPPINGS = {
     "ReicaGCPReadImageNode": GCPReadImageNode,
     "ReicaGCPWriteImageNode": GCPWriteImageNode,
     "ReicaTextImageDisplay": ReicaTextImageDisplay,
-    "ReicaReadImageUrl": ReicaReadImageUrl,
     "ReicaURLImageLoader": URLImageLoaderFilename,
     "ReicaHTTPNotification": HTTPNotificationNode,
     "ReicaInsertAnythingNode": InsertAnythingNode,
     "ReicaTryOffDiffLoader": TryOffDiffLoaderNode,
     "ReicaTryOffDiffGenerator": TryOffDiffNode,
+    "ReicaLoadLoopImagesFromURLs": LoadLoopImagesFromURLs,
+    "ReicaLoadLoopImagesFromURLsSkipErrors": LoadLoopImagesFromURLsSkipErrors,
 }
 
 # Nomi visualizzati per i nodi
@@ -30,5 +32,7 @@ NODE_DISPLAY_NAME_MAPPINGS = {
     "ReicaHTTPNotification": "Reica API: Send HTTP Notification",
     "ReicaInsertAnythingNode": "Reica Insert Anything",
     "ReicaTryOffDiffLoader": "Reica TryOffDiff Model Loader",
-    "ReicaTryOffDiffGenerator": "Reica TryOffDiff Generator"
+    "ReicaTryOffDiffGenerator": "Reica TryOffDiff Generator",
+    "ReicaLoadLoopImagesFromURLs": "Reica Load Loop Images From URLs",
+    "ReicaLoadLoopImagesFromURLsSkipErrors": "Reica Load Loop Images From URLs (Skip Errors)",
 }
