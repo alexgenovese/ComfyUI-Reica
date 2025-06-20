@@ -21,13 +21,12 @@ class LoadLoopImagesFromURLs:
             },
             "optional": {
                 "load_always": ("BOOLEAN", {"default": False, "label_on": "enabled", "label_off": "disabled"}),
-                "timeout": ("INT", {"default": 10, "min": 1, "max": 60}),
             }
         }
 
-    RETURN_TYPES = ("IMAGE", "MASK", "STRING")
-    RETURN_NAMES = ("IMAGE", "MASK", "URL")
-    OUTPUT_IS_LIST = (False, False, False)  # Only return one image at a time
+    RETURN_TYPES = ("IMAGE", "MASK", "STRING", "STRING")
+    RETURN_NAMES = ("IMAGE", "MASK", "URL", "FILENAME")
+    OUTPUT_IS_LIST = (False, False, False, False)  # Only return one image at a time
 
     FUNCTION = "load_images"
 
@@ -70,7 +69,29 @@ class LoadLoopImagesFromURLs:
         return urls
 
     @classmethod
-    def _download_image(cls, url, timeout=10):
+    def _get_filename_from_url(cls, url):
+        """
+        Extract filename from URL or generate one if not available.
+        """
+        try:
+            # Remove query parameters and fragments
+            clean_url = url.split('?')[0].split('#')[0]
+            # Extract filename from path
+            filename = os.path.basename(clean_url)
+            
+            # If no filename or extension, generate one
+            if not filename or '.' not in filename:
+                # Create a hash-based filename
+                url_hash = hashlib.md5(url.encode()).hexdigest()[:8]
+                filename = f"image_{url_hash}.jpg"
+            
+            return filename
+        except Exception:
+            # Fallback filename
+            return f"image_{cls.last_index + 1}.jpg"
+
+    @classmethod
+    def _download_image(cls, url):
         """
         Download image from URL with error handling.
         """
@@ -78,34 +99,26 @@ class LoadLoopImagesFromURLs:
             headers = {
                 'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36'
             }
-            
-            response = requests.get(url, timeout=timeout, headers=headers, stream=True)
+            response = requests.get(url, headers=headers, stream=True)
             response.raise_for_status()
-            
-            # Check if content is an image
             content_type = response.headers.get('content-type', '')
             if not content_type.startswith('image/'):
                 raise ValueError(f"URL does not point to an image. Content-Type: {content_type}")
-            
-            # Load image from response content
             image_data = BytesIO(response.content)
             img = Image.open(image_data)
-            
             return img
-            
         except requests.exceptions.RequestException as e:
             raise ConnectionError(f"Failed to download image from {url}: {str(e)}")
         except Exception as e:
             raise ValueError(f"Failed to process image from {url}: {str(e)}")
 
-    def load_images(self, urls_text: str, load_always=False, timeout=10):
+    def load_images(self, urls_text: str, load_always=False):
         """
         Load images from URLs, cycling through them one at a time.
         
         :param urls_text: String containing URLs, one per line
         :param load_always: Boolean flag for always loading
-        :param timeout: Timeout for HTTP requests in seconds
-        :return: image, mask, and current URL
+        :return: image, mask, current URL, and filename
         """
         urls = self._parse_urls(urls_text)
         
@@ -115,11 +128,14 @@ class LoadLoopImagesFromURLs:
         # Get current URL based on last_index
         current_url = urls[self.last_index % len(urls)]
         
-        print(f"Loading image {self.last_index + 1} of {len(urls)}: {current_url}")
+        # Extract filename from URL
+        filename = self._get_filename_from_url(current_url)
+        
+        print(f"Loading image {self.last_index + 1} of {len(urls)}: {filename} from {current_url}")
         
         # Download and process image
         try:
-            img = self._download_image(current_url, timeout)
+            img = self._download_image(current_url)
             img = ImageOps.exif_transpose(img)
             
             # Convert to RGB
@@ -137,7 +153,7 @@ class LoadLoopImagesFromURLs:
                 h, w = image.shape[1:3]
                 mask = torch.zeros((1, h, w), dtype=torch.float32, device="cpu")
 
-            return image, mask, current_url
+            return image, mask, current_url, filename
             
         except Exception as e:
             # If current URL fails, try to continue with a placeholder or raise error
@@ -150,7 +166,7 @@ class LoadLoopImagesFromURLsSkipErrors(LoadLoopImagesFromURLs):
     Version that skips failed URLs instead of stopping execution
     """
     
-    def load_images(self, urls_text: str, load_always=False, timeout=10):
+    def load_images(self, urls_text: str, load_always=False):
         """
         Load images from URLs, skipping failed ones and continuing with the next.
         """
@@ -165,10 +181,13 @@ class LoadLoopImagesFromURLsSkipErrors(LoadLoopImagesFromURLs):
         while attempts < max_attempts:
             current_url = urls[self.last_index % len(urls)]
             
+            # Extract filename from URL
+            filename = self._get_filename_from_url(current_url)
+            
             try:
-                print(f"Loading image {self.last_index + 1} of {len(urls)}: {current_url}")
+                print(f"Loading image {self.last_index + 1} of {len(urls)}: {filename} from {current_url}")
                 
-                img = self._download_image(current_url, timeout)
+                img = self._download_image(current_url)
                 img = ImageOps.exif_transpose(img)
                 
                 # Convert to RGB
@@ -186,12 +205,13 @@ class LoadLoopImagesFromURLsSkipErrors(LoadLoopImagesFromURLs):
                     h, w = image.shape[1:3]
                     mask = torch.zeros((1, h, w), dtype=torch.float32, device="cpu")
 
-                return image, mask, current_url
+                return image, mask, current_url, filename
                 
             except Exception as e:
-                print(f"Skipping failed URL {current_url}: {str(e)}")
+                print(f"Skipping failed URL {current_url} ({filename}): {str(e)}")
                 self.last_index = (self.last_index + 1) % len(urls)
                 attempts += 1
                 continue
         
         raise RuntimeError("All URLs failed to load. Please check your URLs and internet connection.")
+
