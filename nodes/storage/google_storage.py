@@ -67,7 +67,14 @@ class GCPWriteImageNode:
             # Process each image with its corresponding filename
             for idx, (image, filename) in enumerate(zip(images_list, file_names_array)):
                 try:
-                    i = 255. * image.cpu().numpy()
+                    i = image.cpu().numpy()
+                    # Debug: stampa la shape originale
+                    print(f"[DEBUG] Original image shape: {i.shape}")
+                    # Rimuovi dimensioni batch/canale extra
+                    while i.ndim > 3:
+                        i = i[0]
+                    print(f"[DEBUG] Shape for PIL: {i.shape}")
+                    i = 255. * i
                     img = Image.fromarray(np.clip(i, 0, 255).astype(np.uint8))
                     
                     img_byte_arr = BytesIO()
