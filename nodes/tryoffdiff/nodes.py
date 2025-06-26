@@ -1,5 +1,4 @@
 import os
-import json
 import torch
 import numpy as np
 from PIL import Image
@@ -59,19 +58,27 @@ class TryOffDiffLoaderNode:
             "dress": {"class_name": "TryOffDiffv2Single", "path": "tryoffdiffv2_dress.pth"},
             "multi": {"class_name": "TryOffDiffv2", "path": "tryoffdiffv2_multi.pth"},
         }
+        model_config = model_paths[model_type]
 
         # check if folder tryoffdiff exists, if not create it
         if not os.path.exists("./models/tryoffdiff"):
             os.makedirs("./models/tryoffdiff")
         
-        # Load main model
-        model_config = model_paths[model_type]
-        path_model = hf_hub_download(
-            repo_id=repo_id, 
-            filename=model_config["path"], 
-            force_download=force_download,
-            local_dir="./models/tryoffdiff"
-        )
+            # Download and load the model
+            path_model = hf_hub_download(
+                repo_id=repo_id, 
+                filename=model_config["path"], 
+                force_download=force_download,
+                local_dir="./models/tryoffdiff"
+            )
+        else:
+            # Load from local directory
+            path_model = os.path.join("./models/tryoffdiff", model_config["path"])
+
+        # Load the model state dict
+        if not os.path.exists(path_model):
+            raise FileNotFoundError(f"Model file not found: {path_model}")
+        
         state_dict = torch.load(path_model, weights_only=True, map_location=device)
         state_dict = {k.replace('_orig_mod.', ''): v for k, v in state_dict.items()}
         model = create_model(model_config["class_name"]).to(device)

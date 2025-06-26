@@ -3,17 +3,8 @@ from typing import Any
 
 import torch
 import torchvision.transforms.v2 as transforms
-from diffusers import AutoencoderKL, UNet2DConditionModel, UNet2DModel
-from torch import Tensor, nn
-from transformers import (
-    AutoImageProcessor,
-    AutoModel,
-    AutoProcessor,
-    CLIPImageProcessor,
-    CLIPVisionModel,
-    SiglipImageProcessor,
-    SiglipVisionModel,
-)
+from diffusers import UNet2DConditionModel
+from torch import nn
 
 
 class TryOffDiff(nn.Module):
