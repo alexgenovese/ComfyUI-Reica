@@ -50,7 +50,16 @@ class GCPWriteImageNode:
             
             # Process the first image (you could modify to handle multiple images differently)
             image = images[0]
-            i = 255. * image.cpu().numpy()
+            i = image.cpu().numpy()
+            print(f"[DEBUG] Original image shape: {i.shape}")
+            # Remove batch and channel dimensions if present
+            if i.ndim == 4 and i.shape[0] == 1:
+                i = i[0]
+            if i.ndim == 3 and i.shape[0] == 1:
+                i = i[0]
+            # Now i should be (H, W, 3)
+            print(f"[DEBUG] Processed image shape for PIL: {i.shape}")
+            i = 255. * i
             img = Image.fromarray(np.clip(i, 0, 255).astype(np.uint8))
             
             # Instead of saving to file, use BytesIO to keep in memory
