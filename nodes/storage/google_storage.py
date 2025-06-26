@@ -68,14 +68,22 @@ class GCPWriteImageNode:
             for idx, (image, filename) in enumerate(zip(images_list, file_names_array)):
                 try:
                     i = image.cpu().numpy()
-                    # Debug: stampa la shape originale
-                    print(f"[DEBUG] Original image shape: {i.shape}")
+                    print(f"[DEBUG] Original image shape: {i.shape}, dtype: {i.dtype}")
                     # Rimuovi dimensioni batch/canale extra
                     while i.ndim > 3:
                         i = i[0]
-                    print(f"[DEBUG] Shape for PIL: {i.shape}")
+                    print(f"[DEBUG] Shape for PIL: {i.shape}, dtype: {i.dtype}")
                     i = 255. * i
-                    img = Image.fromarray(np.clip(i, 0, 255).astype(np.uint8))
+                    # Forza il tipo a uint8 e la shape a (H, W, 3)
+                    i = np.clip(i, 0, 255).astype(np.uint8)
+                    if i.ndim == 2:  # grayscale
+                        img = Image.fromarray(i, mode="L")
+                    elif i.ndim == 3 and i.shape[2] == 3:
+                        img = Image.fromarray(i, mode="RGB")
+                    elif i.ndim == 3 and i.shape[2] == 4:
+                        img = Image.fromarray(i, mode="RGBA")
+                    else:
+                        raise ValueError(f"Unsupported image shape for PIL: {i.shape}")
                     
                     img_byte_arr = BytesIO()
                     img.save(img_byte_arr, format='PNG', compress_level=self.compress_level)
