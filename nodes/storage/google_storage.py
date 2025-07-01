@@ -51,8 +51,13 @@ class GCPWriteImageNode:
             # Handle both single and multiple images
             images_count = 1 if len(images.shape) == 3 else len(images)
             
-            # Split and clean file names string into array
-            file_names_array = [name.strip() for name in file_names.split(",") if name.strip()]
+            # Accept file_names as either a string or a list
+            if isinstance(file_names, str):
+                file_names_array = [name.strip() for name in file_names.split(",") if name.strip()]
+            elif isinstance(file_names, list):
+                file_names_array = [str(name).strip() for name in file_names if str(name).strip()]
+            else:
+                raise ValueError("file_names must be a string or a list of strings")
             
             # Strict validation of matching counts
             if len(file_names_array) != images_count:
