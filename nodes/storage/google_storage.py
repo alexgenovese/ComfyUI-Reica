@@ -24,7 +24,8 @@ class GCPWriteImageNode:
                 "bucket_name": ("STRING", {"default": "my-bucket"}),
                 "bucket_path": ("STRING", {"default": "some/folder"}),
                 "file_names": ("STRING", {"default": "image1.png,image2.png"}),
-                "gcp_service_json": ("STRING", {"default": "/path/to/service_account.json"})
+                "gcp_service_json": ("STRING", {"default": "/path/to/service_account.json"}),
+                "remove_exif": (["no", "yes"], {"default": "no"})
             }
         }
 
@@ -34,7 +35,7 @@ class GCPWriteImageNode:
     OUTPUT_NODE = True
     CATEGORY = "gcp_storage"
 
-    def store_image_in_gcp(self, images, bucket_name, bucket_path, file_names, gcp_service_json):
+    def store_image_in_gcp(self, images, bucket_name, bucket_path, file_names, gcp_service_json, remove_exif="no"):
         error_messages = []
         urls = []
         
@@ -68,6 +69,18 @@ class GCPWriteImageNode:
             
             storage_client = storage.Client()
             bucket = storage_client.bucket(bucket_name)
+
+            # Ensure all subfolders in bucket_path exist (create directory markers if missing)
+            if bucket_path:
+                # Split and build each subpath
+                subpaths = bucket_path.strip("/").split("/")
+                current_path = ""
+                for subfolder in subpaths:
+                    current_path = f"{current_path}/{subfolder}" if current_path else subfolder
+                    dir_marker_blob = bucket.blob(f"{current_path}/")
+                    if not dir_marker_blob.exists():
+                        # Create a zero-length blob as a directory marker
+                        dir_marker_blob.upload_from_string(b"")
             
             # Process each image with its corresponding filename
             for idx, (image, filename) in enumerate(zip(images_list, file_names_array)):
@@ -89,7 +102,15 @@ class GCPWriteImageNode:
                         img = Image.fromarray(i, mode="RGBA")
                     else:
                         raise ValueError(f"Unsupported image shape for PIL: {i.shape}")
-                    
+
+                    # Remove EXIF if requested
+                    if remove_exif == "yes":
+                        img = ImageOps.exif_transpose(img)
+                        data = list(img.getdata())
+                        img_no_exif = Image.new(img.mode, img.size)
+                        img_no_exif.putdata(data)
+                        img = img_no_exif
+
                     img_byte_arr = BytesIO()
                     img.save(img_byte_arr, format='PNG', compress_level=self.compress_level)
                     img_byte_arr.seek(0)
