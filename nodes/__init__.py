@@ -4,6 +4,7 @@ from .mix.insert_anything import InsertAnythingNode
 from .mix.url_image_loader_filename import URLImageLoaderFilename
 from .tryoffdiff.nodes import TryOffDiffNode, TryOffDiffLoaderNode
 from .api.http_notification import HTTPNotificationNode
+from .api.http_custom_request import HTTPCustomRequestNode
 from .mix.loop_back import LoadLoopImagesFromURLs, LoadLoopImagesFromURLsSkipErrors
 
 
@@ -15,6 +16,7 @@ NODE_CLASS_MAPPINGS = {
     "ReicaTextImageDisplay": ReicaTextImageDisplay,
     "ReicaURLImageLoader": URLImageLoaderFilename,
     "ReicaHTTPNotification": HTTPNotificationNode,
+    "ReicaHTTPCustomRequest": HTTPCustomRequestNode,
     "ReicaInsertAnythingNode": InsertAnythingNode,
     "ReicaTryOffDiffLoader": TryOffDiffLoaderNode,
     "ReicaTryOffDiffGenerator": TryOffDiffNode,
@@ -30,6 +32,7 @@ NODE_DISPLAY_NAME_MAPPINGS = {
     "ReicaReadImageUrl": "Reica Read Image URL",
     "ReicaURLImageLoader": "Reica URL Image Loader Filename",
     "ReicaHTTPNotification": "Reica API: Send HTTP Notification",
+    "ReicaHTTPCustomRequest": "Reica API: Send Custom Request",
     "ReicaInsertAnythingNode": "Reica Insert Anything",
     "ReicaTryOffDiffLoader": "Reica TryOffDiff Model Loader",
     "ReicaTryOffDiffGenerator": "Reica TryOffDiff Generator",
