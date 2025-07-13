@@ -15,6 +15,7 @@ class HTTPCustomRequestNode:
                     "multiline": True, 
                     "default": """{\n    "key": "value"\n}""",
                     "placeholder": "Enter JSON body here..."
+                }),
             }
         }
 
