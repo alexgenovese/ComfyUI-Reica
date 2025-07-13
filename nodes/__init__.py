@@ -6,7 +6,7 @@ from .tryoffdiff.nodes import TryOffDiffNode, TryOffDiffLoaderNode
 from .api.http_notification import HTTPNotificationNode
 from .api.http_custom_request import HTTPCustomRequestNode
 from .mix.loop_back import LoadLoopImagesFromURLs, LoadLoopImagesFromURLsSkipErrors
-
+from .mix.smart_resizer import SmartResizer
 
 
 # Mappatura dei nodi per ComfyUI
@@ -22,6 +22,7 @@ NODE_CLASS_MAPPINGS = {
     "ReicaTryOffDiffGenerator": TryOffDiffNode,
     "ReicaLoadLoopImagesFromURLs": LoadLoopImagesFromURLs,
     "ReicaLoadLoopImagesFromURLsSkipErrors": LoadLoopImagesFromURLsSkipErrors,
+    "ReicaSmartResizer": SmartResizer,
 }
 
 # Nomi visualizzati per i nodi
@@ -38,4 +39,5 @@ NODE_DISPLAY_NAME_MAPPINGS = {
     "ReicaTryOffDiffGenerator": "Reica TryOffDiff Generator",
     "ReicaLoadLoopImagesFromURLs": "Reica Load Loop Images From URLs",
     "ReicaLoadLoopImagesFromURLsSkipErrors": "Reica Load Loop Images From URLs (Skip Errors)",
+    "ReicaSmartResizer": "Reica Smart Resizer",
 }
