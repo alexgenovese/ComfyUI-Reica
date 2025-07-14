@@ -16,28 +16,35 @@ class HTTPCustomRequestNode:
                     "default": """{\n    "key": "value"\n}""",
                     "placeholder": "Enter JSON body here..."
                 }),
+                "urls_generated": ("STRING", {"default": ""})
             }
         }
 
-    RETURN_TYPES = ("STRING", "STRING", "STRING")
-    RETURN_NAMES = ("response", "error_message", "display_text")
+    RETURN_TYPES = ("STRING", "STRING", "STRING", "STRING")
+    RETURN_NAMES = ("response", "data", "error_message", "display_text")
     FUNCTION = "send_custom_request"
     CATEGORY = "api"
 
-    def send_custom_request(self, endpoint_url, json_body):
+    def send_custom_request(self, endpoint_url, json_body, urls_generated):
         response = ""
         error_message = ""
+        data = ""
         display_text = f"Processing custom request...\nEndpoint: {endpoint_url}"
         
         try:
             # Parse JSON body
             try:
                 payload = json.loads(json_body)
+                # Merge urls_generated into payload
+                if not "output_results" in payload:
+                    payload["output_results"] = {}
+                payload["output_results"]["urls_generated"] = urls_generated
             except json.JSONDecodeError as je:
                 raise ValueError(f"Invalid JSON format: {str(je)}")
             
             # Update display text
             display_text = f"Sending request to:\n{endpoint_url}\n\nPayload:\n{json.dumps(payload, indent=2)}"
+            data = json.dumps(payload)
             
             # Make HTTP POST request
             headers = {
@@ -57,10 +64,10 @@ class HTTPCustomRequestNode:
             
             error_message = "No errors"
             
-            return (response, error_message, display_text)
+            return (response, data, error_message, display_text)
             
         except Exception as e:
             error_message = f"Failed to send request: {str(e)}"
             display_text = f"❌ Request failed\n\nEndpoint: {endpoint_url}\n\nError: {str(e)}"
             
-            return (response, error_message, display_text)
+            return (response, data, error_message, display_text)
